@@ -1,9 +1,20 @@
 # libreria que lee datos del sistema operativo (intalado en el servidor)
 import psutil
+import os
+import httpx  # Herramientas de fetch pero de python
+
 from fastapi import FastAPI  # Es el framework, crea mi servidor de datos
 from fastapi.middleware.cors import CORSMiddleware  # Componente de seguridad
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from dotenv import load_dotenv  # Para leer .env (con credenciales)
+from datetime import datetime
+
+load_dotenv()
+
+QBIT_HOST = os.getenv("QBIT_HOST")
+QBIT_USER = os.getenv("QBIT_USER")
+QBIT_PASS = os.getenv("QBIT_PASS")
 
 # Instancio el objeto de tipo fastAPI y lo guardo en la variable app. Basicamente instancio mi servidor
 app = FastAPI(title="Mi Dashboard")
@@ -60,3 +71,43 @@ def sistema():
             "porcentaje": disco.percent  # Porcentaje de usado
         }
     }
+
+
+# Decorador - Seccion de informacion de descargas de qBittorrent
+@app.get("/api/descargas")
+def obtener_descargas():  # Funcion para pedir informacion de descargas a la API de qBittorrent
+    try:
+        # Login a qBittorrent
+        sesion = httpx.Client()  # Crea una sesion para acceder a la API
+        sesion.post(f"{QBIT_HOST}/api/v2/auth/login", data={  # usa la parte de QBIT_HOST de mi .env para abrir la sesion de login
+            "username": QBIT_USER,  # Agrega Usuario
+            "password": QBIT_PASS  # Agrega Contrasena
+        })
+
+        # Pedir lista de torrents
+        # Saca los datos de la pagina de datos de los torrents
+        respuesta = sesion.get(f"{QBIT_HOST}/api/v2/torrents/info")
+        torrents = respuesta.json()  # guarda los datos como json
+
+        # Formatear los datos que nos interesan
+        resultado = []
+        estados_activos = ["downloading", "stalledDL",
+                           "checkingDL", "metaDL", "pausedDL", "queuedDL"]
+        for t in torrents:
+            if t["state"] not in estados_activos:
+                continue
+            resultado.append({
+                "nombre": t["name"],
+                "progreso": round(t["progress"] * 100, 1),
+                # Bytes/s → MB/s
+                "velocidad_dl": round(t["dlspeed"] / 1024 / 1024, 2),
+                "velocidad_ul": round(t["upspeed"] / 1024 / 1024, 2),
+                "estado": t["state"],
+                "agregado": datetime.fromtimestamp(t["added_on"]).strftime("%d/%m/%Y %H:%M"),
+                "tamano_gb": round(t["size"] / (1024**3), 2)
+            })
+        resultado.sort(key=lambda t: t["progreso"])
+        return resultado
+
+    except Exception as e:
+        return {"error": str(e)}

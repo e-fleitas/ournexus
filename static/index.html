@@ -21,6 +21,10 @@
         <p>RAM: <span id="ram">cargando...</span></p> <!-- Lo mismo para la ram -->
         <p>Disco: <span id="disco">cargando...</span></p> <!-- lo mismo para el almacenamiento -->
     </section>
+    <section>
+        <h2>Descargas</h2>
+        <div id="descargas">cargando...</div>
+    </section>
     <!-- Basicamente un codigo para pedir datos Json de FastApi -->
     <script>
         const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
@@ -51,6 +55,37 @@
             document.getElementById("ram").textContent = datos.ram.usado_gb + " GB / " + datos.ram.total_gb + " GB (" + datos.ram.porcentaje + "%)"; //entramos en el diccionario de datos, en la subseccion de ram y en los tres distinuts atributos, y los presentamos en un string ordenado
             document.getElementById("disco").textContent = datos.disco.usado_gb + " GB / " + datos.disco.total_gb + " GB (" + datos.disco.porcentaje + "%)"; //lo mismo de arriba
         }
+
+        async function actualizarDescargas() { //Actualiza la seccion de descargas 
+            const respuesta = await fetch("http://100.69.139.70:8000/api/descargas");
+            const torrents = await respuesta.json();
+
+            const contenedor = document.getElementById("descargas");
+
+            if (torrents.error) {
+                contenedor.textContent = "Error: " + torrents.error;
+                return;
+            }
+
+            if (torrents.length === 0) {
+                contenedor.textContent = "No hay descargas activas";
+                return;
+            }
+
+            contenedor.innerHTML = torrents.map(t => `
+                <div>
+                    <p><strong>${t.nombre}</strong></p>
+                    <p>Progreso: ${t.progreso}% | Tamaño: ${t.tamano_gb} GB</p>
+                    <p>↓ ${t.velocidad_dl} MB/s | ↑ ${t.velocidad_ul} MB/s | ${t.estado}</p> 
+                    <p>Agregado: ${t.agregado}</p>
+                    <hr>
+                </div>
+            `).join("");
+        }
+
+        actualizarDescargas();
+
+        setInterval(actualizarDescargas, 5000);
 
         // Ejecutar al cargar la página
         actualizarSistema();
