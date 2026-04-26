@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OurDashBoard</title>
+</head>
+
+<body>
+    <h1>Mi Dashboard</h1>
+    <section>
+        <h2>Fecha y Hora</h2>
+        <p id="fecha"></p>
+        <p id="hora"></p>
+    </section>
+    <section>
+        <h2>Sistema</h2>
+        <p>CPU: <span id="cpu">cargando...</span></p>
+        <!-- Habilita una seccion de la pagina para poner lo del cpu (Y establece esta seccion con el id cpu), que tiene como place holder el mensaje cargando -->
+        <p>RAM: <span id="ram">cargando...</span></p> <!-- Lo mismo para la ram -->
+        <p>Disco: <span id="disco">cargando...</span></p> <!-- lo mismo para el almacenamiento -->
+    </section>
+    <!-- Basicamente un codigo para pedir datos Json de FastApi -->
+    <script>
+        const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        function actualizarReloj() {
+            const ahora = new Date();
+
+            const diaSemana = dias[ahora.getDay()];
+            const dia = String(ahora.getDate()).padStart(2, "0");
+            const mes = meses[ahora.getMonth()];
+            const anio = ahora.getFullYear();
+
+            const horas = String(ahora.getHours()).padStart(2, "0");
+            const minutos = String(ahora.getMinutes()).padStart(2, "0");
+            const segundos = String(ahora.getSeconds()).padStart(2, "0");
+
+            document.getElementById("fecha").textContent = `${diaSemana}, ${dia} de ${mes} de ${anio}`;
+            document.getElementById("hora").textContent = `${horas}:${minutos}:${segundos}`;
+        }
+
+
+        async function actualizarSistema() {  //funcion que actualiza los datos dentro de los spans mas arriba
+            const respuesta = await fetch("http://100.69.139.70:8000/api/sistema");  //Pide el json de este decorador/endpoint
+            const datos = await respuesta.json(); //saca los datos en formato diccionario (imagino)
+
+            document.getElementById("cpu").textContent = datos.cpu + "%"; //sacamos del diccionario datos, la seccion cpu (era solo un dato en main)
+            document.getElementById("ram").textContent = datos.ram.usado_gb + " GB / " + datos.ram.total_gb + " GB (" + datos.ram.porcentaje + "%)"; //entramos en el diccionario de datos, en la subseccion de ram y en los tres distinuts atributos, y los presentamos en un string ordenado
+            document.getElementById("disco").textContent = datos.disco.usado_gb + " GB / " + datos.disco.total_gb + " GB (" + datos.disco.porcentaje + "%)"; //lo mismo de arriba
+        }
+
+        // Ejecutar al cargar la página
+        actualizarSistema();
+
+        // Actualizar cada 3 segundos
+        setInterval(actualizarSistema, 3000);
+
+        actualizarReloj();
+
+        setInterval(actualizarReloj, 1000);
+    </script>
+</body>
+
+</html>
