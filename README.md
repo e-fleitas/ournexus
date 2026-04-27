@@ -8,6 +8,7 @@ A personal homelab dashboard built from scratch to monitor and control my self-h
 
 - **System Monitor** — Real-time CPU, RAM and disk usage with dynamic progress bars and color alerts
 - **Active Downloads** — qBittorrent integration showing active torrents with progress bars and speeds
+![Dashboard con descarga activa](docs/screenshots/dashboard-downloading-v1.png)
 - **Service Bookmarks** — Quick access to all self-hosted services with local and Tailscale links
 - **Clock** — Live date and time display
 - **Notes** — Persistent markdown notepad saved locally
