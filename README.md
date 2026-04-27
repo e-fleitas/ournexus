@@ -1,4 +1,5 @@
 # OurNexus Dashboard
+> 📖 [Versión en español](README.es.md)
 
 A personal homelab dashboard built from scratch to monitor and control my self-hosted server infrastructure. Accessible from any device via Tailscale VPN.
 
